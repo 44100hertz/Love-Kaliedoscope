@@ -5,13 +5,13 @@ function K.new ()
   local o = {}
 
   -- Dimensions
-  o.shader = love.graphics.newShader('shader.glsl')
+  o.shader = love.graphics.newShader('shaders/reflect.glsl')
 
   -- Variables
   o.tex_offset = math.random()
   o.scroll_speed = 0.0131
-  o.contrast = 2.0
-  o.brightness = 0.0
+  o.contrast = 1.5
+  o.brightness = 0
   o.rotations = 9
   o.zoom = 1.0
   o.last_step = love.timer.getTime()
@@ -20,6 +20,7 @@ end
 
 function K:setImage (image_path)
   self.image = love.graphics.newImage(image_path)
+  self.image:setFilter('nearest','nearest')
 end
 
 function K:alter_value (value, operation)

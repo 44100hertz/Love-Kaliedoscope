@@ -1,17 +1,17 @@
-local Kalied = require 'Kaliedoscope'
+local Kaleid = require 'Kaleidoscope'
 
 local k
 
 local image_index = 1
 local image_paths = {
-  'candyshop.jpg',
-  'hologram.jpg',
-  'lineart.png',
-  'mask.png',
-  'free-smile.jpg',
-  'faces.jpg',
-  'faces2.jpg',
-  'rainbow.png',
+  'img/candyshop.jpg',
+  'img/hologram.jpg',
+  'img/lineart.png',
+  'img/mask.png',
+  'img/free-smile.jpg',
+  'img/faces.jpg',
+  'img/faces2.jpg',
+  'img/rainbow.png',
 }
 local function next_image ()
   k:setImage(image_paths[image_index])
@@ -20,7 +20,7 @@ end
 
 function love.load ()
   love.window.setMode(800,600,{fullscreen=true})
-  k = Kalied.new()
+  k = Kaleid.new()
   next_image()
 end
 
