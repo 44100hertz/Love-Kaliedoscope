@@ -11,6 +11,7 @@ local image_paths = {
   'free-smile.jpg',
   'faces.jpg',
   'faces2.jpg',
+  'rainbow.png',
 }
 local function next_image ()
   k:setImage(image_paths[image_index])
@@ -23,11 +24,8 @@ function love.load ()
   next_image()
 end
 
-local dc = 4
-
 function love.wheelmoved (_, y)
-  local off = y < 0 and -1 or 1
-  dc = math.min(10, math.max(0, dc + off))
+  k:alter_value('rotations', y < 0 and 'dec' or 'inc')
 end
 
 function love.mousepressed ()
@@ -37,22 +35,20 @@ end
 function love.keypressed (key)
   if key == 'q' then
     love.event.quit()
-  elseif key == '=' then
-    dc = dc + 1
-  elseif key == '-' then
-    dc = dc - 1
   elseif key == 'space' then
     next_image()
   else
     local binds = {
       up = {'scroll_speed', 'inc'},
       down = {'scroll_speed', 'dec'},
-      right = {'rotate_speed', 'inc'},
-      left = {'rotate_speed', 'dec'},
+      right = {'zoom', 'inc'},
+      left = {'zoom', 'dec'},
       [']'] = {'contrast', 'inc'},
       ['['] = {'contrast', 'dec'},
       ['0'] = {'brightness', 'inc'},
       ['9'] = {'brightness', 'dec'},
+      ['='] = {'rotations', 'inc'},
+      ['-'] = {'rotations', 'dec'},
     }
     local b = binds[key]
     if b then
@@ -63,4 +59,5 @@ end
 
 function love.draw ()
   k:draw(dc)
+  love.graphics.print('rotations: ' .. k.rotations, 0,0)
 end
