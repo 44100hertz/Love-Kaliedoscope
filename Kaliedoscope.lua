@@ -5,10 +5,11 @@ function K.new (res_scale)
   local o = {}
   res_scale = res_scale or 1.0
   local sw, sh = love.window.getDesktopDimensions()
+  local res = math.min(sw, sh) * res_scale
 
   -- Dimensions
-  o.w = sw * res_scale
-  o.h = sh * res_scale
+  o.w = res
+  o.h = res
   o.src_buf = love.graphics.newCanvas(o.w, o.h)
   o.dest_buf = love.graphics.newCanvas(o.w, o.h)
   o.shader = love.graphics.newShader('shader.glsl')
@@ -16,7 +17,6 @@ function K.new (res_scale)
   -- Variables
   o.base_rot = 0
   o.rot = math.random()*10
-  o.scale = 2.0
   o.tex_offset = math.random()
   o.scroll_speed = 0.0131
   o.rotate_speed = 0.0611
@@ -67,42 +67,50 @@ function K:draw (count)
   self.last_step = self.last_step + dt
 
   love.graphics.setShader(self.shader)
-  local ww, wh = love.window.getMode()
-  local sw, sh = self.scale*ww/self.w, self.scale*wh/self.h
 
   -- Reset textures
   self.tex_offset = (self.tex_offset + dt*self.scroll_speed) % 1.0
   self.base_rot = self.base_rot + dt*self.rotate_speed
   self.rot = math.pi * 2.0
+
+  self.shader:send('rotation', self.base_rot)
+  self.shader:send('offset', self.tex_offset)
+
   local function initdraw ()
-    self.shader:send('offset', self.tex_offset)
     love.graphics.setColor(1,1,1,1)
     local iw, ih = self.image:getDimensions()
     local sw, sh = self.w/iw, self.h/ih
-    love.graphics.draw(self.image, self.w/2, self.h/2, self.base_rot, sw, sh, iw/2, ih/2)
-    self.shader:send('offset', 0.0)
+    love.graphics.draw(self.image, 0, 0, 0, sw, sh)
   end
   self.src_buf:renderTo(initdraw)
   self.dest_buf:renderTo(initdraw)
 
+  self.shader:send('rotation', 0)
+  self.shader:send('offset', 0)
+
   -- Kaliedoscope Iteration
   for i = 1,count do
     self.dest_buf:renderTo(function ()
-        love.graphics.setColor(1,1,1,0.5)
-        love.graphics.draw(self.src_buf, self.w/2, self.h/2, self.rot, -1,1, self.w/2, self.h/2)
+        love.graphics.setColor(1,1,1,1)
+        self.shader:send('rotation', self.rot)
+        local bw, bh = self.src_buf:getDimensions()
+        love.graphics.draw(self.src_buf, bw,0,0, -1,1)
+        self.shader:send('rotation', 0)
     end)
     self.src_buf:renderTo(function ()
-        love.graphics.setColor(1,1,1,1)
+        love.graphics.setColor(1,1,1,0.5)
         love.graphics.draw(self.dest_buf)
     end)
     self.rot = self.rot / 2
   end
 
   -- Copy buffer to screen
+  local ww, wh = love.window.getMode()
+  local scale = math.max(ww/self.w, wh/self.h)
   love.graphics.setColor(1,1,1,1)
   self.shader:send('contrast', self.contrast)
   self.shader:send('brightness', self.brightness / math.sqrt(self.contrast))
-  love.graphics.draw(self.src_buf, ww/2, wh/2, 0, sw, sh, self.w/2, self.h/2)
+  love.graphics.draw(self.src_buf, ww/2, wh/2, 0, scale, scale, self.w/2, self.h/2)
   self.shader:send('contrast', 1.0)
   love.graphics.setShader()
 end

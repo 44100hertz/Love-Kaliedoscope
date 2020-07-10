@@ -9,6 +9,8 @@ local image_paths = {
   'lineart.png',
   'mask.png',
   'free-smile.jpg',
+  'faces.jpg',
+  'faces2.jpg',
 }
 local function next_image ()
   k:setImage(image_paths[image_index])
@@ -61,5 +63,4 @@ end
 
 function love.draw ()
   k:draw(dc)
-  love.graphics.print(string.format('Dose: %d', dc))
 end
