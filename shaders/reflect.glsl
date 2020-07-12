@@ -8,7 +8,7 @@ uniform float angle = 0.0;
 uniform float zoom = 1.0;
 
 uniform float color_phase = 0.0;
-uniform float color_period = 1.0;
+uniform float color_rate = 1.0;
 uniform float mirror_level = 1.0;
 
 vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)
@@ -31,7 +31,7 @@ vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)
         t = mod(t + 0.5, 1.0);
         pixel += Texel(tex, t) / num_angles / 2.0 * mirror_level;
     }
-    pixel = (pixel - 0.5) * color_period + 0.5 + color_phase;
+    pixel = (pixel - 0.5) * color_rate + 0.5 + color_phase;
     pixel = cos(pixel * PI + PI) / 2.0 + 0.5;
     return vec4(pixel.rgb, color.a);
 }

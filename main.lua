@@ -40,5 +40,4 @@ end
 
 function love.draw ()
   k:draw(dc)
-  love.graphics.print('rotations: ' .. k.rotations, 0,0)
 end
