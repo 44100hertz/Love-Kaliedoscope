@@ -24,36 +24,17 @@ function love.load ()
   next_image()
 end
 
-function love.wheelmoved (_, y)
-  k:alter_value('rotations', y < 0 and 'dec' or 'inc')
-end
-
 function love.mousepressed ()
   next_image()
 end
 
-function love.keypressed (key)
-  if key == 'q' then
+function love.keypressed (_,key)
+  if key == 'escape' then
     love.event.quit()
   elseif key == 'space' then
     next_image()
   else
-    local binds = {
-      up = {'scroll_speed', 'inc'},
-      down = {'scroll_speed', 'dec'},
-      right = {'zoom', 'inc'},
-      left = {'zoom', 'dec'},
-      [']'] = {'contrast', 'inc'},
-      ['['] = {'contrast', 'dec'},
-      ['0'] = {'brightness', 'inc'},
-      ['9'] = {'brightness', 'dec'},
-      ['='] = {'rotations', 'inc'},
-      ['-'] = {'rotations', 'dec'},
-    }
-    local b = binds[key]
-    if b then
-      k:alter_value(unpack(binds[key]))
-    end
+    k:handle_keypress(key)
   end
 end
 
