@@ -46,6 +46,15 @@ function K.new ()
       j = {'mirror_level', 'dec'},
   }
 
+  o.keybinds_by_value = {}
+  for key,vvv in pairs(o.keybinds) do
+    local value, op = unpack(vvv)
+    if not o.keybinds_by_value[value] then
+      o.keybinds_by_value[value] = {}
+    end
+    o.keybinds_by_value[value][op] = key
+  end
+
   o.last_step = love.timer.getTime()
 
   o.values = {
@@ -152,10 +161,14 @@ function K:draw ()
   if self.toggles.info then
     local t = {}
     for k,v in pairs(self.toggles) do
-      t[#t+1] = string.format('self.toggles.%s = %s',k,v)
+      local kk = self.keybinds_by_value[k]
+      local keystr = kk and string.format('(%s)',kk.toggle) or ''
+      t[#t+1] = string.format('self.toggles.%s = %s %s',k,v,keystr)
     end
     for k,v in pairs(self.values) do
-      t[#t+1] = string.format('self.values.%s = %s',k,v)
+      local kk = self.keybinds_by_value[k]
+      local keystr = kk and string.format('(%s/%s)',kk.inc,kk.dec) or ''
+      t[#t+1] = string.format('self.values.%s = %s %s',k,v,keystr)
     end
     local f = love.graphics.getFont()
     local s = table.concat(t,'\n')
