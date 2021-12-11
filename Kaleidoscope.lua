@@ -1,49 +1,87 @@
 local K = {}
 K.__index = K
 
+function K.defaults ()
+  return {
+    values = {
+      zoom         = 1.0,
+      num_angles   = 9,
+
+      scroll_speed = 0.01,
+      rotate_speed = 0.01,
+      cycle_speed  = 0.2,
+
+      color_rate   = 1.0,
+      color_phase  = 0.0,
+
+      mirror_level = 1.0,
+      feedback_level = 0.5,
+
+      offset = math.random(),
+      angle = math.random(),
+      cycle = 0,
+    },
+    toggles = {
+      scroll = true,
+      rotate = true,
+      cycle = false,
+      filter = true,
+      info = false,
+      feedback = false,
+    }
+  }
+end
+
 function K.new ()
   local o = {}
 
+  o.canvas_size = 1000
   o.shader = love.graphics.newShader('shaders/reflect.glsl')
 
   o.adjustments = {
-    zoom         = {default = 1.0, mul = 1.2, min = 0.1,   max = 10},
-    num_angles   = {default = 9,   add = 1,   min = 1,     max = 100},
+    zoom         = {mul = 1.2, min = 0.1,   max = 10},
+    num_angles   = {add = 1,   min = 1,     max = 100},
 
-    scroll_speed = {default = 0.01,mul = 1.5, min = 0.002, max = 1.0},
-    rotate_speed = {default = 0.01,mul = 1.5, min = 0.002, max = 1.0},
-    cycle_speed  = {default = 0.2, mul = 1.5, min = 0.05,  max = 8.0},
+    scroll_speed = {mul = 1.5, min = 0.002, max = 1.0},
+    rotate_speed = {mul = 1.5, min = 0.002, max = 1.0},
+    cycle_speed  = {mul = 1.5, min = 0.05,  max = 8.0},
 
-    color_rate   = {default = 1.0, mul = 1.5, min=1.0,     max=100.0},
-    color_phase  = {default = 0.0, add = 0.2},
-    mirror_level = {default = 1.0, add = 0.5, min=-1,      max=1},
+    color_rate   = {mul = 1.5, min=1.0,     max=100.0},
+    color_phase  = {add = 0.2},
+    mirror_level = {add = 0.5, min=-1,      max=1},
+
+    feedback_level = {default = 0.5, add = 0.05, min=0.05, max = 0.95},
   }
 
   o.keybinds = {
-      [']'] = {'num_angles', 'inc'},
-      ['['] = {'num_angles', 'dec'},
-      ['='] = {'zoom', 'inc'},
-      ['-'] = {'zoom', 'dec'},
+    [']'] = {'num_angles', 'inc'},
+    ['['] = {'num_angles', 'dec'},
+    ['='] = {'zoom', 'inc'},
+    ['-'] = {'zoom', 'dec'},
 
-      q = {'scroll_speed', 'inc'},
-      a = {'scroll_speed', 'dec'},
-      z = {'scroll', 'toggle'},
-      w = {'rotate_speed', 'inc'},
-      s = {'rotate_speed', 'dec'},
-      x = {'rotate', 'toggle'},
-      e = {'cycle_speed', 'inc'},
-      d = {'cycle_speed', 'dec'},
-      c = {'cycle', 'toggle'},
+    q = {'scroll_speed', 'inc'},
+    a = {'scroll_speed', 'dec'},
+    z = {'scroll', 'toggle'},
+    w = {'rotate_speed', 'inc'},
+    s = {'rotate_speed', 'dec'},
+    x = {'rotate', 'toggle'},
+    e = {'cycle_speed', 'inc'},
+    d = {'cycle_speed', 'dec'},
+    c = {'cycle', 'toggle'},
+    ['o'] = {'feedback_level', 'inc'},
+    ['l'] = {'feedback_level', 'dec'},
+    ['.'] = {'feedback', 'toggle'},
 
-      f = {'filter', 'toggle'},
-      i = {'info', 'toggle'},
+    f = {'filter', 'toggle'},
+    i = {'info', 'toggle'},
 
-      t = {'color_rate', 'inc'},
-      g = {'color_rate', 'dec'},
-      y = {'color_phase', 'inc'},
-      h = {'color_phase', 'dec'},
-      u = {'mirror_level', 'inc'},
-      j = {'mirror_level', 'dec'},
+    t = {'color_rate', 'inc'},
+    g = {'color_rate', 'dec'},
+    y = {'color_phase', 'inc'},
+    h = {'color_phase', 'dec'},
+    u = {'mirror_level', 'inc'},
+    j = {'mirror_level', 'dec'},
+
   }
 
   o.keybinds_by_value = {}
@@ -69,16 +107,7 @@ function K.new ()
 end
 
 function K:default_values ()
-  self.toggles = {
-    scroll = true,
-    rotate = true,
-    cycle = false,
-    filter = true,
-    info = false,
-  }
-  for k,a in pairs(self.adjustments) do
-    self.values[k] = a.default
-  end
+  for k,v in pairs(self:defaults()) do self[k] = v end
 end
 
 function K:setImage (image_path)
@@ -86,6 +115,7 @@ function K:setImage (image_path)
 end
 
 function K:handle_keypress (key)
+  if key == 'escape' then love.quit() end
   local b = self.keybinds[key]
   if b then
     self:alter_value(unpack(b))
@@ -125,38 +155,67 @@ function K:draw ()
   local dt = love.timer.getTime() - self.last_step
   self.last_step = self.last_step + dt
 
-  love.graphics.setShader(self.shader)
-
-  local adjustable_params = {
+  -- Set up shader parameters
+  --
+  -- Constantly changing parameters such as scrolling
+  local scrolling_params = {
     offset = {toggle = 'scroll', delta = 'scroll_speed'},
     angle = {toggle = 'rotate', delta = 'rotate_speed'},
     color_phase = {toggle = 'cycle', delta = 'cycle_speed'},
   }
-  for param,v in pairs(adjustable_params) do
+  for param,v in pairs(scrolling_params) do
     if self.toggles[v.toggle] then
+      print(param, v.delta)
       self.values[param] = self.values[param] + dt*self.values[v.delta]
     end
   end
-
+  -- Uniforms
   local uniforms = {
     'num_angles','offset','angle','zoom','color_phase','color_rate','mirror_level'
   }
   for _,uniform in ipairs(uniforms) do
     self.shader:send(uniform, self.values[uniform])
   end
-
+  -- Scaling Filter
   local filt = self.toggles.filter and 'linear' or 'nearest'
   self.image:setFilter(filt,filt)
 
-  local ww, wh = love.window.getMode()
-  local iw, ih = self.image:getDimensions()
-  local larger = math.max(ww, wh)
-  local sw, sh = larger/iw, larger/ih
-
-  love.graphics.setColor(1,1,1,1)
-
-  love.graphics.draw(self.image, ww/2, wh/2, 0, sw, sh, iw/2, ih/2)
-  love.graphics.setShader()
+  if not self.toggles.feedback then
+    -- No Feedback
+    self.canvas_a = nil
+    self.canvas_b = nil
+    -- Scale with aspect
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.setShader(self.shader)
+    self:draw_fullscreen_crop(self.image)
+    love.graphics.setShader()
+  else
+    local ss = self.canvas_size
+    if not self.canvas_a then
+      self.canvas_a = love.graphics.newCanvas(ss, ss)
+      self.canvas_b = love.graphics.newCanvas(ss, ss)
+    end
+    -- Complex Feedback
+    self.canvas_b:renderTo(function ()
+        -- Render a copy of the input image to the inner canvas
+        love.graphics.setShader()
+        love.graphics.setColor(1,1,1,1)
+        self:draw_to_size_stretch(self.image, ss, ss)
+        love.graphics.setShader(self.shader)
+        self.shader:send('color_phase', 0)
+        self.shader:send('color_rate', 1)
+        -- Render a copy of the Kaliedoscope canvas to the inner canvas
+        love.graphics.setColor(1,1,1,self.values.feedback_level)
+        love.graphics.draw(self.canvas_a)
+        self.shader:send('color_phase', self.values.color_phase)
+        self.shader:send('color_rate', self.values.color_rate / (1.0 - self.values.feedback_level))
+    end)
+    -- Render the kaliedoscope
+    love.graphics.setColor(1,1,1,1)
+    self:draw_fullscreen_crop(self.canvas_b)
+    love.graphics.setShader()
+    self.canvas_a, self.canvas_b = self.canvas_b, self.canvas_a
+  end
 
   if self.toggles.info then
     local t = {}
@@ -178,6 +237,21 @@ function K:draw ()
     love.graphics.setColor(1,1,1,1)
     love.graphics.print(s, 20, 20)
   end
+end
+
+-- Render something to 100% fill specified width and height
+function K:draw_to_size_stretch(texture, w, h)
+  local iw, ih = texture:getDimensions()
+  love.graphics.draw(texture, 0, 0, 0, w/iw, h/ih)
+end
+
+-- Render something to the screen while preserving its aspect ratio.
+function K:draw_fullscreen_crop(texture)
+  local ww, wh = love.window.getMode()
+  local iw, ih = texture:getDimensions()
+  local larger = math.max(ww, wh)
+  local sw, sh = larger/iw, larger/ih
+  love.graphics.draw(texture, ww/2, wh/2, 0, sw, sh, iw/2, ih/2)
 end
 
 return K
