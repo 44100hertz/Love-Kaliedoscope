@@ -31,7 +31,7 @@ vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)
         t = mod(t + 0.5, 1.0);
         pixel += Texel(tex, t) / num_angles / 2.0 * mirror_level;
     }
-    pixel = (pixel - 0.5) * color_rate + 0.5 + color_phase;
-    pixel = cos(pixel * PI + PI) / 2.0 + 0.5;
+    pixel = (pixel - 0.5) * color_rate + color_phase;
+    pixel = sin(pixel * PI) / 2.0 + 0.5;
     return vec4(pixel.rgb, color.a);
 }
