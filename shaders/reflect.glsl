@@ -8,6 +8,7 @@ uniform float angle = 0.0;
 uniform float zoom = 1.0;
 
 uniform float color_phase = 0.0;
+uniform float hue_phase = 0.0;
 uniform float color_rate = 1.0;
 uniform float mirror_level = 1.0;
 
@@ -32,6 +33,10 @@ vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc)
         pixel += Texel(tex, t) / num_angles / 2.0 * mirror_level;
     }
     pixel = (pixel - 0.5) * color_rate + color_phase;
-    pixel = sin(pixel * PI) / 2.0 + 0.5;
+    float ph = hue_phase;
+    float PHI = 1.61803;
+    vec4 hue_offsets = vec4(ph/PHI, ph, ph*PHI, 0);
+    vec4 px = pixel * PI + hue_offsets;
+    pixel = (sin(px)*0.5 + pow(sin(px), vec4(3.0))*0.5) / 2.0 + 0.5;
     return vec4(pixel.rgb, color.a);
 }

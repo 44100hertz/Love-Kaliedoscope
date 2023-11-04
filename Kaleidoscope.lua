@@ -7,12 +7,15 @@ function K.defaults ()
       zoom         = 1.0,
       num_angles   = 9,
 
-      scroll_speed = 0.01,
-      rotate_speed = 0.01,
-      cycle_speed  = 0.2,
+      scroll_rate = 0.01,
+      rotate_rate = 0.01,
+      cycle_rate  = 0.2,
 
-      color_rate   = 1.0,
+      hue_phase  = math.random() * 100,
+      hue_rate  = 0.2,
+
       color_phase  = 0.0,
+      color_rate   = 1.0,
 
       mirror_level = 1.0,
       feedback_level = 0.5,
@@ -28,6 +31,7 @@ function K.defaults ()
       filter = true,
       info = false,
       feedback = false,
+      hue_cycle = true,
     }
   }
 end
@@ -42,9 +46,12 @@ function K.new ()
     zoom         = {mul = 1.2, min = 0.1,   max = 10},
     num_angles   = {add = 1,   min = 1,     max = 100},
 
-    scroll_speed = {mul = 1.5, min = 0.002, max = 1.0},
-    rotate_speed = {mul = 1.5, min = 0.002, max = 1.0},
-    cycle_speed  = {mul = 1.5, min = 0.05,  max = 8.0},
+    scroll_rate = {mul = 1.5, min = 0.002, max = 1.0},
+    rotate_rate = {mul = 1.5, min = 0.002, max = 1.0},
+    cycle_rate  = {mul = 1.5, min = 0.05,  max = 8.0},
+
+    hue_phase = {mul = 1.5, min = 0.002, max = 1.0},
+    hue_rate  = {add = 0.1, min = -1,  max = 1},
 
     color_rate   = {mul = 1.5, min=1.0,     max=100.0},
     color_phase  = {add = 0.2},
@@ -59,14 +66,14 @@ function K.new ()
     ['='] = {'zoom', 'inc'},
     ['-'] = {'zoom', 'dec'},
 
-    q = {'scroll_speed', 'inc'},
-    a = {'scroll_speed', 'dec'},
+    q = {'scroll_rate', 'inc'},
+    a = {'scroll_rate', 'dec'},
     z = {'scroll', 'toggle'},
-    w = {'rotate_speed', 'inc'},
-    s = {'rotate_speed', 'dec'},
+    w = {'rotate_rate', 'inc'},
+    s = {'rotate_rate', 'dec'},
     x = {'rotate', 'toggle'},
-    e = {'cycle_speed', 'inc'},
-    d = {'cycle_speed', 'dec'},
+    e = {'cycle_rate', 'inc'},
+    d = {'cycle_rate', 'dec'},
     c = {'cycle', 'toggle'},
     ['o'] = {'feedback_level', 'inc'},
     ['l'] = {'feedback_level', 'dec'},
@@ -77,8 +84,14 @@ function K.new ()
 
     t = {'color_rate', 'inc'},
     g = {'color_rate', 'dec'},
+
     y = {'color_phase', 'inc'},
     h = {'color_phase', 'dec'},
+
+    ['0'] = {'hue_rate', 'inc'},
+    p = {'hue_rate', 'dec'},
+    ['9'] = {'hue_cycle', 'toggle'},
+
     u = {'mirror_level', 'inc'},
     j = {'mirror_level', 'dec'},
 
@@ -159,9 +172,10 @@ function K:draw ()
   --
   -- Constantly changing parameters such as scrolling
   local scrolling_params = {
-    offset = {toggle = 'scroll', delta = 'scroll_speed'},
-    angle = {toggle = 'rotate', delta = 'rotate_speed'},
-    color_phase = {toggle = 'cycle', delta = 'cycle_speed'},
+    offset = {toggle = 'scroll', delta = 'scroll_rate'},
+    angle = {toggle = 'rotate', delta = 'rotate_rate'},
+    color_phase = {toggle = 'cycle', delta = 'cycle_rate'},
+    hue_phase = {toggle = 'hue_cycle', delta = 'hue_rate'},
   }
   for param,v in pairs(scrolling_params) do
     if self.toggles[v.toggle] then
@@ -171,7 +185,7 @@ function K:draw ()
   end
   -- Uniforms
   local uniforms = {
-    'num_angles','offset','angle','zoom','color_phase','color_rate','mirror_level'
+    'num_angles','offset','angle','zoom','color_phase','color_rate','mirror_level','hue_phase'
   }
   for _,uniform in ipairs(uniforms) do
     self.shader:send(uniform, self.values[uniform])
